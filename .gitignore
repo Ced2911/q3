@@ -1,0 +1,14 @@
+build
+Debug
+Debug XB
+Profile_FastCap
+Release
+*.xgd
+*.vcxproj.user
+*.obj
+ipch
+.svn
+.svnignore
+*.opensdf
+*.sdf
+*.suo

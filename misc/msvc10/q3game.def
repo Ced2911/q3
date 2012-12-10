@@ -1,0 +1,4 @@
+LIBRARY q3ui
+EXPORTS
+	vmMain		@1
+	dllEntry	@2
