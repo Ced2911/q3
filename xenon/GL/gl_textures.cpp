@@ -288,9 +288,12 @@ static void copyImage(int xoffset, int yoffset, int width, int height, BYTE * sr
 
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * pixels)
 {
-	return;
 	bool is_set = false;
 	
+#ifdef _DEBUG
+	return;
+#endif
+
 	if (level > 0)
 		return;
 		

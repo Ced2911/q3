@@ -118,7 +118,7 @@ unsigned int cache[65536];
 /***********************************************************************
  * Textures
  ***********************************************************************/
-struct GLTexture;
+class GLTexture;
 
 struct glXeSurface_t{
 	// OpenGL texture id
@@ -247,7 +247,7 @@ typedef struct {
 	unsigned int fill_mode_back;
 
 	// cull
-	unsigned int cull_mode;
+	unsigned int cull_order;
 	unsigned int cull_enabled;
 	unsigned int cull_face;
 
@@ -303,6 +303,7 @@ public:
 public:
 	void InitStates();
 	void UpdateStates();
+	void ResetStates();
 	void InitTextures();
 	void CGLImpl::ReleaseTextures (void);
 
@@ -342,106 +343,32 @@ public:
 extern CGLImpl GLImpl;
 
 
-struct GLTexture {
+class GLTexture {
 private:
 	LPDIRECT3DTEXTURE9 tex;
-
-	// don't overwrite any parent variables
 	struct {
 		D3DLOCKED_RECT rect;	
 		D3DSURFACE_DESC desc;
 		D3DFORMAT format;
+		D3DFORMAT uncompressed_format;
+		int uncompressed_pitch;
 		DWORD XgFlags;
+		BYTE * data;
 		int compressed;
 		int tiled;
 		int pPitch;
 	} _info;
 public:
-	GLTexture(int width, int height, D3DFORMAT format) {
-		D3DXCreateTexture(GLImpl.device, width, height, 1, 0, format, 0, &tex);
-		_info.format = format;
-		_info.compressed = 0;
-		_info.tiled = 0;
-	}
-	~GLTexture()
-	{
-		if(tex) {
-			tex->Release();
-		}
-	}
-	void GetLevelDesc(int level, D3DSURFACE_DESC *pDesc) {
-		tex->GetLevelDesc(level, pDesc);
-	}
+	GLTexture(int width, int height, D3DFORMAT format);
+	~GLTexture();
+	void GetLevelDesc(int level, D3DSURFACE_DESC *pDesc);
+	void setTexture(int sampler);
 
-	void setTexture(int sampler)
-	{
-		GLImpl.device->SetTexture(sampler, tex);
-	}
+	void lockTexture();
+	void unlockTexture();
 
-	void lockTexture() {
-		// get texture information
-		tex->GetLevelDesc(0, &_info.desc);		
-		tex->LockRect(0, &_info.rect, NULL, NULL);
-
-		_info.XgFlags = 0;
-
-		if (XGIsBorderTexture((D3DBaseTexture*)this)) {
-			_info.XgFlags |= XGTILE_BORDER;
-		}
-		if (!XGIsPackedTexture((D3DBaseTexture*)this)) {
-			_info.XgFlags |= XGTILE_NONPACKED;
-		}
-
-		// untile the surface
-		if (_info.tiled) {
-			XGUntileTextureLevel(_info.desc.Width, _info.desc.Height, 0, XGGetGpuFormat(_info.desc.Format), _info.XgFlags, _info.rect.pBits, _info.rect.Pitch, NULL, _info.rect.pBits, NULL);
-		}
-	}
-
-	void unlockTexture()
-	{
-		// until
-		_info.tiled = 1;
-		XGTileTextureLevel(_info.desc.Width, _info.desc.Height, 0, XGGetGpuFormat(_info.desc.Format), _info.XgFlags, _info.rect.pBits, NULL, _info.rect.pBits, _info.rect.Pitch, NULL);
-		
-		// compress
-		if (_info.format == D3DFMT_A8R8G8B8) {
-			_info.compressed = 1;
-			/*
-			XGCompressSurface( _info.rect.pBits,
-                   _info.rect.Pitch,
-                   _info.desc.Width, 
-                   _info.desc.Height,
-                   D3DFMT_LIN_DXT3,
-                   NULL,
-                   _info.rect.pBits,
-                   _info.rect.Pitch,
-                   D3DFMT_LIN_A8R8G8B8,
-                   NULL,
-                   XGCOMPRESS_PREMULTIPLY,
-                   0.0f );
-			
-			// change texture format
-			XGTEXTURE_DESC xdesc;
-			XGGetTextureDesc(tex,0,&xdesc);
-			XGSetTextureHeader(xdesc.Width, xdesc.Height, 1, _info.desc.Usage, D3DFMT_LIN_DXT3, _info.desc.Pool, 0, 0, _info.rect.Pitch, tex, (UINT*)_info.rect.pBits, 0);
-
-			XGTileTextureLevel(_info.desc.Width, _info.desc.Height, 0, XGGetGpuFormat(D3DFMT_LIN_DXT3), _info.XgFlags, _info.rect.pBits, NULL, _info.rect.pBits, _info.rect.Pitch, NULL);
-			*/
-		}
-		// unlock
-		tex->UnlockRect(0);
-	}
-
-	BYTE * getData()
-	{
-		return (BYTE*)_info.rect.pBits;
-	}
-
-	int getPitch()
-	{
-		return _info.rect.Pitch;
-	}
+	BYTE * getData();
+	int getPitch();
 };
 
 /***********************************************************************

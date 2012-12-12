@@ -227,6 +227,7 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\xenon\GL\gldx9texture.cpp" />
     <ClCompile Include="..\..\xenon\GL\gl_colors.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">CompileAsCpp</CompileAs>
     </ClCompile>

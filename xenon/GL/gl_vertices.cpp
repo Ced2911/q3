@@ -27,7 +27,7 @@ static int vertices_count;
 void CGLImpl::SubmitVertexes()
 {	
 	// only render if we have some vertices
-	if (prim.vertices.size() == 0)
+	if (prim.vertices.size() == 0 && vertices_count == 0)
 		return;
 
 	//device->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME);

@@ -253,10 +253,9 @@ void XDKGlBeginFrame() {
 	GLImpl.device->Swap(pFrontBuffer, NULL);
 
 	// reset
+	GLImpl.ResetStates();
 	GLImpl.ResetMatrixDirty();
 	GLImpl.prim.clear();
-
-	GLImpl.state.dirty = 0xFFFFFFFF;
 }
 
 //-------------------------------------------------------------------------------------

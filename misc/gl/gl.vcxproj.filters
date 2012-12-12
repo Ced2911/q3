@@ -47,6 +47,9 @@
     <ClCompile Include="..\..\xenon\GL\gl_states.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xenon\GL\gldx9texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xenon\GL\gl.h">

@@ -259,22 +259,22 @@ Input
 static DWORD dwPlayerIndex = 0;
 
 int	joyDirectionKeys[16] = {
-	K_UPARROW, K_DOWNARROW,
-	K_LEFTARROW, K_RIGHTARROW,
-	K_JOY16, K_JOY17,
-	K_JOY18, K_JOY19,
-	K_JOY20, K_JOY21,
-	K_JOY22, K_JOY23,
-	K_JOY24, K_JOY25,
-	K_JOY26, K_JOY27
+	K_JOY1, K_JOY2,
+	K_JOY3, K_JOY4,
+	K_ENTER, K_ESCAPE, // start / back
+	K_JOY7, K_JOY8,
+	K_JOY9, K_JOY10,
+	K_JOY11, K_JOY12,
+	K_JOY13, K_JOY14,
+	K_JOY15, K_JOY16,
 };
 
 static DWORD oldButtons, buttons = 0;
 static short oldAxis[4];
+static BYTE oldTrigger[2];
 
 static short filter_axis(short axis, int deadzone) {
-	if(axis < deadzone && 
-				axis > -deadzone)
+	if(axis < deadzone && axis > -deadzone)
 		axis = 0;
 
 	return axis;
@@ -320,7 +320,6 @@ static void circular_deadzone(short *x, short *y, int deadzone) {
 	*y = LY;
 }
 
-
 static void xinput_update() {
 	XINPUT_STATE state;
 	int i = 0;
@@ -336,14 +335,26 @@ static void xinput_update() {
 		// 0 && 1 // pushed
 		if (!(oldButtons  & v) && (buttons  & v)) {
 			Com_QueueEvent( 0, SE_KEY, joyDirectionKeys[i], qtrue, 0, NULL );
-			//Com_QueueEvent( 0, SE_KEY, K_JOY1 + i, qtrue, 0, NULL );
 		} 
 		// 1 && 0 // released
 		else if (oldButtons  & v && !(buttons  & v)){
 			Com_QueueEvent( 0, SE_KEY, joyDirectionKeys[i], qfalse, 0, NULL );
-			// Com_QueueEvent( 0, SE_KEY, K_JOY1 + i, qfalse, 0, NULL );
 		}
 	}
+
+	// trigger
+	state.Gamepad.bLeftTrigger = state.Gamepad.bLeftTrigger>XINPUT_GAMEPAD_TRIGGER_THRESHOLD?255:0;
+	state.Gamepad.bRightTrigger = state.Gamepad.bRightTrigger>XINPUT_GAMEPAD_TRIGGER_THRESHOLD?255:0;
+
+	if (!oldTrigger[0] && state.Gamepad.bLeftTrigger )
+		Com_QueueEvent( 0, SE_KEY, K_JOY20, qtrue, 0, NULL );
+	else if (oldTrigger[0] && !state.Gamepad.bLeftTrigger )
+		Com_QueueEvent( 0, SE_KEY, K_JOY20, qfalse, 0, NULL );
+
+	if (!oldTrigger[1] && state.Gamepad.bRightTrigger )
+		Com_QueueEvent( 0, SE_KEY, K_JOY21, qtrue, 0, NULL );
+	else if (oldTrigger[1] && !state.Gamepad.bRightTrigger )
+		Com_QueueEvent( 0, SE_KEY, K_JOY21, qfalse, 0, NULL );
 
 	// filter
 	state.Gamepad.sThumbLX = filter_axis(state.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
@@ -354,55 +365,69 @@ static void xinput_update() {
 	circular_deadzone(&state.Gamepad.sThumbLX, &state.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
 	circular_deadzone(&state.Gamepad.sThumbRX, &state.Gamepad.sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
 	*/
-	
-	// axis
-	if (state.Gamepad.sThumbLX != oldAxis[0]) {
-		Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 0, state.Gamepad.sThumbLX, 0, NULL );
-	}
-	if (state.Gamepad.sThumbLY != oldAxis[1]) {
-		Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 1, -state.Gamepad.sThumbLY, 0, NULL );
-	}
-	if (state.Gamepad.sThumbRX != oldAxis[2]) {
-		Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 4, state.Gamepad.sThumbRX, 0, NULL );
-	}
-	if (state.Gamepad.sThumbRY != oldAxis[3]) {
-		Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 3, -state.Gamepad.sThumbRY, 0, NULL );
+	if (( Key_GetCatcher( ) & KEYCATCH_UI ) || (Key_GetCatcher( ) & KEYCATCH_CGAME)) {
+		int mouse_x, mouse_y;
+
+		mouse_x = state.Gamepad.sThumbLX>>13;
+		mouse_y = -state.Gamepad.sThumbLY>>13;
+
+		Com_QueueEvent( 0, SE_MOUSE, mouse_x, mouse_y, 0, NULL );
+	} else {
+		// axis
+		if (state.Gamepad.sThumbLX != oldAxis[0]) {
+			Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 0, state.Gamepad.sThumbLX, 0, NULL );
+		}
+		if (state.Gamepad.sThumbLY != oldAxis[1]) {
+			Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 1, -state.Gamepad.sThumbLY, 0, NULL );
+		}
+		if (state.Gamepad.sThumbRX != oldAxis[2]) {
+			Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 4, state.Gamepad.sThumbRX, 0, NULL );
+		}
+		if (state.Gamepad.sThumbRY != oldAxis[3]) {
+			Com_QueueEvent( 0, SE_JOYSTICK_AXIS, 3, -state.Gamepad.sThumbRY, 0, NULL );
+		}
 	}
 
 	oldAxis[0] = state.Gamepad.sThumbLX;
 	oldAxis[1] = state.Gamepad.sThumbLY;
 	oldAxis[2] = state.Gamepad.sThumbRX;
 	oldAxis[3] = state.Gamepad.sThumbRY;
+	
+	oldTrigger[0] = state.Gamepad.bLeftTrigger;
+	oldTrigger[1] = state.Gamepad.bRightTrigger;
 
 	oldButtons = buttons;
 }
 
 void IN_Init( void )
 {
-	Key_SetBinding(K_JOY1 + 0, "+moveup");		// XINPUT_GAMEPAD_DPAD_UP
-	Key_SetBinding(K_JOY1 + 1, "+movedown");	
+	Key_SetBinding(K_JOY1 + 0, "+scores");		// XINPUT_GAMEPAD_DPAD_UP
+	Key_SetBinding(K_JOY1 + 1, "+attack");	
 	Key_SetBinding(K_JOY1 + 2, "weapprev");
 	Key_SetBinding(K_JOY1 + 3, "weapnext");
 
 	// START BACK
-	Key_SetBinding(K_JOY1 + 4, "+button2");		// XINPUT_GAMEPAD_START
-	Key_SetBinding(K_JOY1 + 5, "togglemenu");	// XINPUT_GAMEPAD_BACK
+	//Key_SetBinding(K_JOY1 + 4, "+button2");		// XINPUT_GAMEPAD_START
+	//Key_SetBinding(K_JOY1 + 5, "togglemenu");	// XINPUT_GAMEPAD_BACK
+	
+	// Stick
+	//Key_SetBinding(K_JOY1 + 6, "+moveleft");	// XINPUT_GAMEPAD_LEFT_SHOULDER
+	//Key_SetBinding(K_JOY1 + 7, "+moveright");
 
 	// LT RT
-	Key_SetBinding(K_JOY1 + 6, "+zoom");		// XINPUT_GAMEPAD_LEFT_THUMB
-	Key_SetBinding(K_JOY1 + 7, "+attack");
-
-	// LB RB
-	Key_SetBinding(K_JOY1 + 8, "+moveleft");	// XINPUT_GAMEPAD_LEFT_SHOULDER
+	Key_SetBinding(K_JOY1 + 8, "+moveleft");		// XINPUT_GAMEPAD_LEFT_THUMB
 	Key_SetBinding(K_JOY1 + 9, "+moveright");	
 
 	Key_SetBinding(K_JOY1 + 10, "+scores");		// XINPUT_GAMEPAD_BIGBUTTON
 
 	// ABXY
-	Key_SetBinding(K_JOY1 + 11, "+moveup");		// XINPUT_GAMEPAD_A			
-	Key_SetBinding(K_JOY1 + 12, "+movedown");
-	Key_SetBinding(K_JOY1 + 13, "weapprev");
-	Key_SetBinding(K_JOY1 + 14, "weapnext");
+	Key_SetBinding(K_JOY1 + 12, "+moveup");					
+	Key_SetBinding(K_JOY1 + 13, "+movedown");	// XINPUT_GAMEPAD_A
+	Key_SetBinding(K_JOY1 + 14, "weapprev");	// XINPUT_GAMEPAD_X
+	Key_SetBinding(K_JOY1 + 15, "weapnext");
+
+	Key_SetBinding(K_JOY20, "+zoom");
+	Key_SetBinding(K_JOY21, "+attack");
 
 	oldButtons = buttons = 0;
 }

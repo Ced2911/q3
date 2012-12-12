@@ -73,12 +73,12 @@ void glClearStencil(GLint s)
  ***********************************************************************/
 void glFrontFace (GLenum mode)
 {
-	GLImpl.state.cull_face = mode;
+	GLImpl.state.cull_order = mode;
 	GLImpl.state.dirty |= DIRTY_CULL;
 }
 void glCullFace (GLenum mode)
 {
-	GLImpl.state.cull_mode = mode;
+	GLImpl.state.cull_face = mode;
 	GLImpl.state.dirty |= DIRTY_CULL;
 }
 /***********************************************************************
@@ -464,19 +464,19 @@ void CGLImpl::UpdateStates() {
 		unsigned int culling;
 		if (state.cull_enabled) {
 			if (state.cull_face == GL_BACK) {
-				if (state.cull_mode == GL_CCW) {
+				if (state.cull_order == GL_CCW) {
 					culling = GPUCULL_BACK_FRONTFACE_CCW;
 				} else {
 					culling = GPUCULL_BACK_FRONTFACE_CW;
 				}
 			} else if (state.cull_face == GL_FRONT) {
-				if (state.cull_mode == GL_CCW) {
+				if (state.cull_order == GL_CCW) {
 					culling = GPUCULL_FRONT_FRONTFACE_CCW;
 				} else {
 					culling = GPUCULL_FRONT_FRONTFACE_CW;
 				}
 			} else {
-				if (state.cull_mode == GL_CCW) {
+				if (state.cull_order == GL_CCW) {
 					culling = GPUCULL_NONE_FRONTFACE_CCW;
 				} else {
 					culling = GPUCULL_NONE_FRONTFACE_CW;
@@ -484,22 +484,26 @@ void CGLImpl::UpdateStates() {
 			}
 		} else {
 			// GL_BACK + GL_CCW
-			culling = GPUCULL_NONE_FRONTFACE_CCW;
+			culling = GPUCULL_NONE_FRONTFACE_CCW; // working
+			//culling = GPUCULL_BACK_FRONTFACE_CCW;
 		}
+		//culling = state.cull_enabled?D3DCULL_CCW:D3DCULL_NONE;
 		device->SetRenderState(D3DRS_CULLMODE, culling);
+		//device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 	}
 	if (state.dirty & DIRTY_SCISSOR) {
 		// Scissor
 		device->SetRenderState(D3DRS_SCISSORTESTENABLE, state.scissor_enabled);
 		if (state.scissor_enabled) {
 			// lower left
-			RECT scissor = {
-				state.scissor_x, 
-				state.scissor_y, 
-				state.scissor_x + state.scissor_w, 
-				state.scissor_y + state.scissor_h
-			};
-			// device->SetScissorRect(&scissor);
+			RECT scissor;
+			scissor.left = state.scissor_x;
+			scissor.right = state.scissor_x + state.scissor_w;
+			scissor.bottom = state.scissor_h + state.scissor_y;
+			scissor.top = state.render_height - (state.scissor_h + state.scissor_y);
+#ifndef _DEBUG
+			device->SetScissorRect(&scissor);
+#endif
 		}
 	}
 
@@ -559,11 +563,13 @@ void CGLImpl::UpdateStates() {
 	state.dirty = 0;
 }
 
-void CGLImpl::InitStates() {
-	memset(&state, 0, sizeof(xe_states_t));
+void CGLImpl::ResetStates()
+{
+	//memset(&state, 0, sizeof(xe_states_t));
 	state.fill_mode_back = state.fill_mode_front = D3DFILL_SOLID;	
-	state.cull_mode = D3DCULL_NONE;
-
+	state.cull_face = GL_BACK;
+	state.cull_order = GL_CCW;
+	/*
 	state.blend_src = D3DBLEND_ONE;
 	state.blend_op = D3DBLENDOP_ADD;
 	state.blend_dst = D3DBLEND_ZERO;
@@ -589,8 +595,13 @@ void CGLImpl::InitStates() {
 	state.z_enable = 0;
 	state.z_mask = 0;
 	state.z_func = 0;
-	
+	*/
 	state.dirty = 0xFFFFFFFF;
+}
+
+void CGLImpl::InitStates() {
+	memset(&state, 0, sizeof(xe_states_t));
+	ResetStates();
 }
 
 static const char * GL_Description = "OpenGL Xenon By Ced2911";
