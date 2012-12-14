@@ -42,12 +42,7 @@ void CGLImpl::SubmitVertexes()
 
 	ApplyTextures();
     shader.ApplyShader();
-
-#if USE_VB
-	device->DrawPrimitive(d3dprim[prim.primitive_type], prim.vertices.prev, primSize(d3dprim[prim.primitive_type], (prim.vertices.size())));
-#else
 	device->DrawPrimitiveUP(d3dprim[prim.primitive_type], primSize(d3dprim[prim.primitive_type], (vertices_count)), vertices_up, sizeof(glVerticesFormat_t));
-#endif
 }
 
 

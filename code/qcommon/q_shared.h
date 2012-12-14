@@ -468,6 +468,9 @@ int Q_isnan(float x);
 	double round(double d);
   // Q_ftol must expand to a function name so the pluggable renderer can take
   // its address
+	static __inline long lrintf(float f) { 
+		return (long)((f > 0.0f) ? (f + 0.5f) : (f - 0.5f)); 
+	}
   #define Q_ftol lrintf
   #define Q_SnapVector(vec)\
 	do\

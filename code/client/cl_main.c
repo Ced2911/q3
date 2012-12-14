@@ -3165,12 +3165,6 @@ int CL_ScaledMilliseconds(void) {
 	return Sys_Milliseconds()*com_timescale->value;
 }
 
-#ifdef _XBOX
-long int lrintf(float v) {
-	return ((long) (v));
-}
-#endif
-
 /*
 ============
 CL_InitRef

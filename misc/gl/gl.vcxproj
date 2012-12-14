@@ -255,8 +255,6 @@
     <ClCompile Include="..\..\xenon\GL\gl_vertices.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">CompileAsCpp</CompileAs>
     </ClCompile>
-    <ClCompile Include="..\..\xenon\GL\VecMatrix.c" />
-    <ClCompile Include="..\..\xenon\GL\VecVector.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xenon\GL\gl.h" />

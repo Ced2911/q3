@@ -29,6 +29,8 @@ void glClear (GLbitfield mask)
 	if (mask & GL_DEPTH_BUFFER_BIT) flags |= D3DCLEAR_ZBUFFER;
 	if (mask & GL_STENCIL_BUFFER_BIT) flags |= D3DCLEAR_STENCIL;
 
+	//GLImpl.UpdateStates();
+
 	if (GLImpl.use_aa) {
 		// todo
 		// const D3DVECTOR4 clearColor = { 0.f, 0.f, 0.f, 1.f };
@@ -38,14 +40,14 @@ void glClear (GLbitfield mask)
 			0L, NULL, flags,
 			GLImpl.state.clear_color, 
 			GLImpl.state.clear_depth_value, 
-			GLImpl.state.clear_stencil_value
+			GLImpl.state.clear_stencil_value & 0x000000FF 
 		);
 	} else {
 		GLImpl.device->Clear(
 			0L, NULL, flags,
 			GLImpl.state.clear_color, 
 			GLImpl.state.clear_depth_value, 
-			GLImpl.state.clear_stencil_value
+			GLImpl.state.clear_stencil_value & 0x000000FF 
 		);
 	}
 }
@@ -84,20 +86,27 @@ void glCullFace (GLenum mode)
 /***********************************************************************
  * Depth
  ***********************************************************************/
-D3DCMPFUNC d3dcmp[] = {
-	D3DCMP_NEVER,			//#define GL_NEVER 0x0200
-	D3DCMP_LESS,			//#define GL_LESS 0x0201
-	D3DCMP_EQUAL,			//#define GL_EQUAL 0x0202
-	D3DCMP_LESSEQUAL,		//#define GL_LEQUAL 0x0203
-	D3DCMP_GREATER,			//#define GL_GREATER 0x0204
-	D3DCMP_NOTEQUAL,		//#define GL_NOTEQUAL 0x0205
-	D3DCMP_GREATEREQUAL,	//#define GL_GEQUAL 0x0206
-	D3DCMP_ALWAYS,			//#define GL_ALWAYS 0x0207
-};
+static D3DCMPFUNC ConvertComparison(GLenum comparison)
+{
+    D3DCMPFUNC d3dComp = D3DCMP_ALWAYS;
+    switch (comparison)
+    {
+      case GL_NEVER:    d3dComp = D3DCMP_NEVER;        break;
+      case GL_ALWAYS:   d3dComp = D3DCMP_ALWAYS;       break;
+      case GL_LESS:     d3dComp = D3DCMP_LESS;         break;
+      case GL_LEQUAL:   d3dComp = D3DCMP_LESSEQUAL;    break;
+      case GL_EQUAL:    d3dComp = D3DCMP_EQUAL;        break;
+      case GL_GREATER:  d3dComp = D3DCMP_GREATER;      break;
+      case GL_GEQUAL:   d3dComp = D3DCMP_GREATEREQUAL; break;
+      case GL_NOTEQUAL: d3dComp = D3DCMP_NOTEQUAL;     break;
+    }
+
+    return d3dComp;
+}
 
 void glDepthFunc (GLenum func)
 {
-	GLImpl.state.z_func = d3dcmp[func & 0xf];
+	GLImpl.state.z_func = ConvertComparison(func);
 	GLImpl.state.dirty |= DIRTY_DEPTH;
 }
 
@@ -109,9 +118,9 @@ void glDepthMask (GLboolean flag)
 
 void glAlphaFunc (GLenum func, GLclampf ref)
 {
-	GLImpl.state.alpha_test_func =  d3dcmp[func & 0xf];
+	GLImpl.state.alpha_test_func = ConvertComparison(func);
 	GLImpl.state.alpha_test_ref = ref * 255;
-	GLImpl.state.dirty |= DIRTY_DEPTH;
+	GLImpl.state.dirty |= DIRTY_ALPHA;
 }
 
 
@@ -288,7 +297,7 @@ void glStencilFunc(GLenum func,	GLint ref,GLuint mask)
 	GLImpl.state.stencil_func_face = stencil_back_and_front;
 	GLImpl.state.stencil_ref_face = stencil_back_and_front;
 
-	GLImpl.state.stencil_func = d3dcmp[func & 0xf];
+	GLImpl.state.stencil_func = ConvertComparison(func);
 	GLImpl.state.stencil_mask = mask;
 	GLImpl.state.stencil_ref = ref;
 }
@@ -334,8 +343,8 @@ void glPolygonMode (GLenum face, GLenum mode)
 
 void glPolygonOffset (GLfloat factor, GLfloat units)
 {
-	GLImpl.state.zoffset = units;
-	GLImpl.state.woffset = factor;
+	GLImpl.state.zoffset = units * 0.000125f;
+	GLImpl.state.woffset = -factor * 0.0025f;
 	GLImpl.state.dirty |= DIRTY_ZBIAS;
 }
 
@@ -401,6 +410,9 @@ void glGetIntegerv(GLenum pname, GLint * params)
 		params[0] = 2;
 		break;
 
+	case GL_COLOR_WRITEMASK:
+		params[0] = GLImpl.state.color_mask;
+
 	default:		
 		params[0] = 0;
 		return;
@@ -413,9 +425,20 @@ void glGetIntegerv(GLenum pname, GLint * params)
  ***********************************************************************/
 void glDepthRange (GLclampd zNear, GLclampd zFar)
 {
+	if (zNear > zFar) {
+		GLclampd temp = zNear;
+		zNear = zFar;
+		zFar = temp;
+	}
+
+	GLclampd mid = (zNear+zFar) / 2;
+	
 	GLImpl.state.viewport.MaxZ = (float)zFar;
 	GLImpl.state.viewport.MinZ = (float)zNear;
-	
+	/*
+	GLImpl.state.viewport.MaxZ = (float)mid;
+	GLImpl.state.viewport.MinZ = (float)mid - zFar;
+	*/
 	GLImpl.state.dirty |= DIRTY_VIEWPORT;
 }
 
@@ -433,6 +456,11 @@ void glViewport (GLint x, GLint y, GLsizei width, GLsizei height)
  * States Management
  ***********************************************************************/
 void CGLImpl::UpdateStates() {
+
+	// Hack
+	device->SetRenderState(D3DRS_HALFPIXELOFFSET, true);
+	device->SetRenderState(D3DRS_VIEWPORTENABLE, true);
+
 	if (state.dirty & DIRTY_BLEND) {
 		// blending		
 		if (GLImpl.state.blend_enable) {
@@ -450,7 +478,7 @@ void CGLImpl::UpdateStates() {
 		// Alpha test		
 		device->SetRenderState(D3DRS_ALPHATESTENABLE, state.alpha_test_enabled);		
 		device->SetRenderState(D3DRS_ALPHAFUNC, state.alpha_test_func);
-		device->SetRenderState(D3DRS_ALPHAREF, state.alpha_test_ref);
+		device->SetRenderState(D3DRS_ALPHAREF, state.alpha_test_ref & 0xFF);
 	}
 	if (state.dirty & DIRTY_DEPTH) {
 		// Depth
@@ -462,6 +490,7 @@ void CGLImpl::UpdateStates() {
 		// Culling
 		// device->SetRenderState(D3DRS_CULLMODE, state.cull_mode);
 		unsigned int culling;
+#if 0
 		if (state.cull_enabled) {
 			if (state.cull_face == GL_BACK) {
 				if (state.cull_order == GL_CCW) {
@@ -487,6 +516,21 @@ void CGLImpl::UpdateStates() {
 			culling = GPUCULL_NONE_FRONTFACE_CCW; // working
 			//culling = GPUCULL_BACK_FRONTFACE_CCW;
 		}
+#else
+		culling = D3DCULL_CCW;
+		switch (state.cull_face)
+		{
+		  case GL_FRONT:
+			culling = (state.cull_order == GL_CCW ? D3DCULL_CW : D3DCULL_CCW);
+			break;
+		  case GL_BACK:
+			culling = (state.cull_order == GL_CCW ? D3DCULL_CCW : D3DCULL_CW);
+			break;
+		  case GL_FRONT_AND_BACK:
+			culling = D3DCULL_NONE; // culling will be handled during draw
+			break;
+		}
+#endif
 		//culling = state.cull_enabled?D3DCULL_CCW:D3DCULL_NONE;
 		device->SetRenderState(D3DRS_CULLMODE, culling);
 		//device->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
@@ -517,6 +561,20 @@ void CGLImpl::UpdateStates() {
 		}
 	}
 
+	if (state.dirty & DIRTY_STENCIL) {
+		if (state.stencil_enabled) {
+			device->SetRenderState(D3DRS_STENCILENABLE, 1);
+			device->SetRenderState(D3DRS_STENCILFUNC, state.stencil_func);
+			device->SetRenderState(D3DRS_STENCILREF, state.stencil_ref);
+			device->SetRenderState(D3DRS_STENCILMASK, state.stencil_mask_face);
+			device->SetRenderState(D3DRS_STENCILWRITEMASK, state.stencil_write_mask);
+			device->SetRenderState(D3DRS_STENCILFAIL, state.stencil_op_fail);
+			device->SetRenderState(D3DRS_STENCILZFAIL, state.stencil_op_zfail);
+			device->SetRenderState(D3DRS_STENCILPASS, state.stencil_op);
+		} else {
+			device->SetRenderState(D3DRS_STENCILENABLE, 0);
+		}
+	}
 #if 0
 		// Stencil
 		Xe_SetStencilEnable(xe, xe_state.stencil_enabled);
@@ -567,8 +625,17 @@ void CGLImpl::ResetStates()
 {
 	//memset(&state, 0, sizeof(xe_states_t));
 	state.fill_mode_back = state.fill_mode_front = D3DFILL_SOLID;	
+	/*
 	state.cull_face = GL_BACK;
 	state.cull_order = GL_CCW;
+
+	state.viewport.Height = state.render_height;
+	state.viewport.Width = state.render_width;
+	state.viewport.X = 0;
+	state.viewport.Y = 0;
+	state.viewport.MinZ = 0;
+	state.viewport.MaxZ = 1;
+	*/
 	/*
 	state.blend_src = D3DBLEND_ONE;
 	state.blend_op = D3DBLENDOP_ADD;

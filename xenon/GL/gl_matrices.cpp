@@ -107,7 +107,7 @@ void glRotatef (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 	vec.y = y;
 	vec.z = z;
 
-	mat = XMMatrixRotationAxis(vec, DegToRadian(angle));
+	mat = XMMatrixRotationAxis(vec, D3DXToRadian(angle));
 	current_matrix->stack[current_matrix->stackdepth] = mat * current_matrix->stack[current_matrix->stackdepth];
 
 	// dirty the matrix

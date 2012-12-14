@@ -65,11 +65,10 @@ void GLimp_Init( void )
 	*/
 	glConfig.isFullscreen = qtrue;
 
-	/*
-	glConfig.colorBits = 24;
-	glConfig.depthBits = 8;
+
+	glConfig.colorBits = 32;
+	glConfig.depthBits = 24;
 	glConfig.stencilBits = 8;
-	*/
 
 	// todo
 	glConfig.numTextureUnits = 1;

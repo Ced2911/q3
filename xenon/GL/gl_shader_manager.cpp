@@ -219,7 +219,7 @@ char * GlShaderManager::VsGenerator()
 	WRITE("     Out.color0 = In.color0;                   ");
 	WRITE("     Out.texcoord0 = In.texcoord0;             ");
 	WRITE("     Out.texcoord1 = In.texcoord1;             ");
-	//WRITE("     Out.position.z = Out.position.z/2;	  ");
+	//WRITE("     Out.position.z = 1-(Out.position.z*2);	  ");
 	//WRITE("		Out.position.z = (1+Out.position.z)/2;	  ");
 	//WRITE("		Out.position.z = (Out.position.z)/2;	  ");
 	WRITE("     return Out;                               ");

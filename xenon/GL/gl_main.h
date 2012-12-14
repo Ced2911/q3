@@ -3,7 +3,6 @@
 #include "gl.h"
 #include <xtl.h>
 #include <xgraphics.h>
-#include "Vec.h"
 /** based on 
  * http://quakeone.com/mh/gl_fakegl.c
  * http://fossies.org/dox/wine-1.4.1/d3dx9__36_2math_8c_source.html

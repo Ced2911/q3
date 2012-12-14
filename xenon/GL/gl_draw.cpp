@@ -284,7 +284,7 @@ void glDrawElements(GLenum mode, GLsizei numIndexes, GLenum type, const GLvoid *
 	// setup shaders and textures
 	shader.ApplyShader();
 	GLImpl.ApplyTextures();
-	
+//	GLImpl.device->SetRenderState(D3DRS_FILLMODE, D3DFILL_WIREFRAME);
 	GLImpl.device->DrawIndexedPrimitiveUP(
 		D3DPT_TRIANGLELIST,
 		0,
