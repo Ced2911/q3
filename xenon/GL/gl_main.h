@@ -168,7 +168,8 @@ struct glXeTmu_t{
  
 typedef enum{
 	MATMODELVIEW	= 0, // register see opengl.hlsl
-	MATPROJECTION	= 8,
+	MATPROJECTION	= 4,
+	PARAM_CLIPPLANE_0 = 8,
 } TRANSFORM_TYPE;
 
 typedef struct
@@ -193,6 +194,7 @@ enum {
 	DIRTY_FILLMODE = 0x40,
 	DIRTY_SCISSOR = 0x80,
 	DIRTY_ZBIAS = 0x100,
+	DIRTY_CLIP = 0x200,
 	DIRTY_STATE_ALL = 0xFFFFFFFF
 };
 

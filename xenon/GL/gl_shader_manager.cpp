@@ -69,7 +69,12 @@ void GlShaderManager::ApplyShader() {
 		if( FAILED(hr) )
 		{
 			if( pPixelErrorMsg )
+			{	
 				OutputDebugString( (char*)pPixelErrorMsg->GetBufferPointer() );
+#if _DEBUG
+				DebugBreak();
+#endif
+			}
 		}
 
 		OutputDebugStringA( code );
@@ -101,7 +106,12 @@ void GlShaderManager::ApplyShader() {
 		if( FAILED(hr) )
 		{
 			if( pPixelErrorMsg )
+			{	
 				OutputDebugString( (char*)pPixelErrorMsg->GetBufferPointer() );
+#if _DEBUG
+				DebugBreak();
+#endif
+			}
 		}
 
 		OutputDebugStringA( code );
@@ -146,16 +156,21 @@ char * GlShaderManager::PsGenerator()
 	char *p = buffer;
 	WRITE(" sampler2D texture0 : register(s0);     ");
 	WRITE(" sampler2D texture1 : register(s1);     ");
+//	WRITE(" bool bClip : register(b0);     ");
 
 	WRITE(" struct PixelShaderInput    ");
 	WRITE(" {														    ");
 	WRITE(" 	float2 uv0: TEXCOORD0;			// texture 0 uv    ");
 	WRITE(" 	float2 uv1: TEXCOORD1;			// texture 1 uv    ");
 	WRITE(" 	float4 color: COLOR;			// color    ");
+//	WRITE(" 	float1 clip: TEXCOORD2;			// clip    ");
 	WRITE(" };    ");
 
 	WRITE(" float4 main(PixelShaderInput input): COLOR { ");
 	WRITE(" float4 output; ");
+
+//	WRITE(" if(bClip)	");
+//	WRITE("		clip(input.clip.x); ");
 
 	if (GLImpl.tmus[0].enabled && GLImpl.tmus[0].boundtexture) {
 		switch(Texenv.u8[0]) {
@@ -195,6 +210,7 @@ char * GlShaderManager::VsGenerator()
 
 	WRITE(" float4x4 modelview_matrix : register (c%d);   ", MATMODELVIEW);
 	WRITE(" float4x4 projection_matrix : register (c%d);  ", MATPROJECTION);
+	//WRITE(" float4 clipplane: register (c%d);			  ", PARAM_CLIPPLANE_0);
 	WRITE("                                               ");
 	WRITE(" struct VS_IN                                  ");
 	WRITE(" {                                             ");
@@ -210,6 +226,7 @@ char * GlShaderManager::VsGenerator()
 	WRITE("     float2 texcoord0 : TEXCOORD0;             ");
 	WRITE("     float2 texcoord1 : TEXCOORD1;             ");
 	WRITE("     float4 color0   : COLOR0;                 ");
+	//WRITE(" 	float1 clip: TEXCOORD2;			// clip    ");
 	WRITE(" };                                            ");
 	WRITE("                                               ");
 	WRITE(" VS_OUT main( VS_IN In )                       ");
@@ -222,6 +239,7 @@ char * GlShaderManager::VsGenerator()
 	//WRITE("     Out.position.z = 1-(Out.position.z*2);	  ");
 	//WRITE("		Out.position.z = (1+Out.position.z)/2;	  ");
 	//WRITE("		Out.position.z = (Out.position.z)/2;	  ");
+	//WRITE("		Out.clip.x = dot(Out.position, clipplane) ;	");
 	WRITE("     return Out;                               ");
 	WRITE(" }                                             ");
 

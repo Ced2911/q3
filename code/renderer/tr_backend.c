@@ -473,6 +473,7 @@ void RB_BeginDrawingView (void) {
 
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal ) {
+		/*
 		float	plane[4];
 		double	plane2[4];
 
@@ -485,12 +486,12 @@ void RB_BeginDrawingView (void) {
 		plane2[1] = DotProduct (backEnd.viewParms.or.axis[1], plane);
 		plane2[2] = DotProduct (backEnd.viewParms.or.axis[2], plane);
 		plane2[3] = DotProduct (plane, backEnd.viewParms.or.origin) - plane[3];
-
+		*/
 		qglLoadMatrixf( s_flipMatrix );
-		qglClipPlane (GL_CLIP_PLANE0, plane2);
-		qglEnable (GL_CLIP_PLANE0);
+		// qglClipPlane (GL_CLIP_PLANE0, plane2);
+		// qglEnable (GL_CLIP_PLANE0);
 	} else {
-		qglDisable (GL_CLIP_PLANE0);
+		// qglDisable (GL_CLIP_PLANE0);
 	}
 }
 

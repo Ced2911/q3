@@ -224,6 +224,7 @@ void GlEnableDisable(GLenum cap, int enable)
 	case GL_CLIP_PLANE4:
 	case GL_CLIP_PLANE5:
 		GLImpl.state.clipplane_enabled = enable;
+		GLImpl.state.dirty |= DIRTY_CLIP;
 		break;
 		
 	case GL_POLYGON_OFFSET_POINT:
@@ -350,9 +351,13 @@ void glPolygonOffset (GLfloat factor, GLfloat units)
 
 void glClipPlane(GLenum plane, const GLdouble *equation) {
 	int idx = GL_CLIP_PLANE0 - plane;
-	assert(idx>=0 && idx<6);
-	// memcpy(&xe_state.clipplane[idx],equation,4*4);
-	//GLImpl.state.dirty = 1;
+
+	GLImpl.state.clipplane[idx][0] = (GLfloat)equation[0];
+	GLImpl.state.clipplane[idx][1] = (GLfloat)equation[1];
+	GLImpl.state.clipplane[idx][2] = (GLfloat)equation[2];
+	GLImpl.state.clipplane[idx][3] = (GLfloat)equation[3];
+
+	GLImpl.state.dirty |= DIRTY_CLIP;
 }
 
 void glLineWidth(GLfloat width)
@@ -520,10 +525,10 @@ void CGLImpl::UpdateStates() {
 		culling = D3DCULL_CCW;
 		switch (state.cull_face)
 		{
-		  case GL_FRONT:
+		  case GL_BACK:
 			culling = (state.cull_order == GL_CCW ? D3DCULL_CW : D3DCULL_CCW);
 			break;
-		  case GL_BACK:
+		  case GL_FRONT:
 			culling = (state.cull_order == GL_CCW ? D3DCULL_CCW : D3DCULL_CW);
 			break;
 		  case GL_FRONT_AND_BACK:
@@ -590,11 +595,19 @@ void CGLImpl::UpdateStates() {
 		D3DDevice_SetRenderState(device, 
 #endif
 
-	// clip planes		
-	for (int i=0;i<6;i++) {
+	if (state.dirty & DIRTY_CLIP) {
 		//Xe_SetClipPlaneEnables(xe, xe_state.clipplane_enabled);
+		BOOL enabled = state.clipplane_enabled;
 		if (state.clipplane_enabled) {
 			//Xe_SetClipPlane(xe, i, xe_state.clipplane[i]);
+			//device->SetClipPlane(0, state.clipplane[0]);
+			//device->SetRenderState(D3DRS_CLIPPLANEENABLE, D3DCLIPPLANE0);
+			
+			//device->SetPixelShaderConstantB(0, &enabled, 1);
+			//device->SetVertexShaderConstantF(PARAM_CLIPPLANE_0, (float*)state.clipplane[0], 1);
+		} else {
+			//device->SetRenderState(D3DRS_CLIPPLANEENABLE, false);
+			//device->SetPixelShaderConstantB(0, &enabled, 1);
 		}
 	}
 	if (state.dirty & DIRTY_VIEWPORT) {
@@ -625,6 +638,7 @@ void CGLImpl::ResetStates()
 {
 	//memset(&state, 0, sizeof(xe_states_t));
 	state.fill_mode_back = state.fill_mode_front = D3DFILL_SOLID;	
+
 	/*
 	state.cull_face = GL_BACK;
 	state.cull_order = GL_CCW;
@@ -668,6 +682,12 @@ void CGLImpl::ResetStates()
 
 void CGLImpl::InitStates() {
 	memset(&state, 0, sizeof(xe_states_t));
+
+	
+
+	state.cull_face = GL_BACK;
+	state.cull_order = GL_CCW;
+
 	ResetStates();
 }
 

@@ -566,19 +566,62 @@ R_SetupProjectionZ
 Sets the z-component transformation part in the projection matrix
 ===============
 */
+static __inline float SGN(float a)
+{
+    if (a > 0.0F) return (1.0F);
+    if (a < 0.0F) return (-1.0F);
+    return (0.0F);
+}
+#define DotProduct4(a,b)        ((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
+#define VectorScale4(a,b,c)     ((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
+
 void R_SetupProjectionZ(viewParms_t *dest)
 {
 	float zNear, zFar, depth;
-	
-	zNear	= r_znear->value;
-	zFar	= dest->zFar;	
+
+	zNear = r_znear->value;
+	zFar	= dest->zFar;
+
 	depth	= zFar - zNear;
 
 	dest->projectionMatrix[2] = 0;
 	dest->projectionMatrix[6] = 0;
 	dest->projectionMatrix[10] = -( zFar + zNear ) / depth;
 	dest->projectionMatrix[14] = -2 * zFar * zNear / depth;
+
+	if (dest->isPortal)
+	{
+		float	plane[4];
+		float	plane2[4];
+		vec4_t q, c;
+
+		// transform portal plane into camera space
+		plane[0] = dest->portalPlane.normal[0];
+		plane[1] = dest->portalPlane.normal[1];
+		plane[2] = dest->portalPlane.normal[2];
+		plane[3] = dest->portalPlane.dist;
+
+		plane2[0] = -DotProduct (dest->or.axis[1], plane);
+		plane2[1] = DotProduct (dest->or.axis[2], plane);
+		plane2[2] = -DotProduct (dest->or.axis[0], plane);
+		plane2[3] = DotProduct (plane, dest->or.origin) - plane[3];
+
+		// Lengyel, Eric. "Modifying the Projection Matrix to Perform Oblique Near-plane Clipping".
+		// Terathon Software 3D Graphics Library, 2004. http://www.terathon.com/code/oblique.html
+		q[0] = (SGN(plane2[0]) + dest->projectionMatrix[8]) / dest->projectionMatrix[0];
+		q[1] = (SGN(plane2[1]) + dest->projectionMatrix[9]) / dest->projectionMatrix[5];
+		q[2] = -1.0f;
+		q[3] = (1.0f + dest->projectionMatrix[10]) / dest->projectionMatrix[14];
+
+		VectorScale4(plane2, 2.0f / DotProduct4(plane2, q), c);
+
+		dest->projectionMatrix[2]  = c[0];
+		dest->projectionMatrix[6]  = c[1];
+		dest->projectionMatrix[10] = c[2] + 1.0f;
+		dest->projectionMatrix[14] = c[3];
+	}
 }
+
 
 /*
 =================
