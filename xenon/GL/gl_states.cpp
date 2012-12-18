@@ -437,9 +437,10 @@ void glDepthRange (GLclampd zNear, GLclampd zFar)
 	}
 
 	GLclampd mid = (zNear+zFar) / 2;
-	
+
 	GLImpl.state.viewport.MaxZ = (float)zFar;
 	GLImpl.state.viewport.MinZ = (float)zNear;
+	
 	/*
 	GLImpl.state.viewport.MaxZ = (float)mid;
 	GLImpl.state.viewport.MinZ = (float)mid - zFar;

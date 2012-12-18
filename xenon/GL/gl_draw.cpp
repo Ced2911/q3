@@ -280,7 +280,10 @@ void glDrawElements(GLenum mode, GLsizei numIndexes, GLenum type, const GLvoid *
 	GLImpl.UpdateStates();
 	GLImpl.CheckDirtyMatrix(&GLImpl.projection_matrix);
 	GLImpl.CheckDirtyMatrix(&GLImpl.modelview_matrix);
-	
+	/*
+	GLImpl.device->SetVertexShaderConstantF(16, &GLImpl.state.viewport.MinZ, 1);
+	GLImpl.device->SetVertexShaderConstantF(17, &GLImpl.state.viewport.MaxZ, 1);
+	*/
 	// setup shaders and textures
 	shader.ApplyShader();
 	GLImpl.ApplyTextures();

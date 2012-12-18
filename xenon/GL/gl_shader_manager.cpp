@@ -210,6 +210,8 @@ char * GlShaderManager::VsGenerator()
 
 	WRITE(" float4x4 modelview_matrix : register (c%d);   ", MATMODELVIEW);
 	WRITE(" float4x4 projection_matrix : register (c%d);  ", MATPROJECTION);
+	//WRITE(" float4 znear : register (c%d);  ", 16);
+	//WRITE(" float4 zfar : register (c%d);  ", 17);
 	//WRITE(" float4 clipplane: register (c%d);			  ", PARAM_CLIPPLANE_0);
 	WRITE("                                               ");
 	WRITE(" struct VS_IN                                  ");
@@ -240,6 +242,7 @@ char * GlShaderManager::VsGenerator()
 	//WRITE("		Out.position.z = (1+Out.position.z)/2;	  ");
 	//WRITE("		Out.position.z = (Out.position.z)/2;	  ");
 	//WRITE("		Out.clip.x = dot(Out.position, clipplane) ;	");
+	//WRITE("		Out.position.z = 0.5*(zfar-znear)*Out.position.z + 0.5 * (zfar+znear) ;	  ");
 	WRITE("     return Out;                               ");
 	WRITE(" }                                             ");
 

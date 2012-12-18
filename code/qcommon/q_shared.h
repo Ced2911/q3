@@ -323,24 +323,8 @@ void *Hunk_AllocDebug( int size, ha_pref preference, char *label, char *file, in
 void *Hunk_Alloc( int size, ha_pref preference );
 #endif
 
-#ifdef _XBOX
-void * XMemCpy(
-	void * dest,
-	const void *src,
-	int count
-);
-
-void * XMemSet(
-	void * dest,
-	int c,
-	int count
-);
-#define Com_Memset XMemSet
-#define Com_Memcpy XMemCpy
-#else
 #define Com_Memset memset
 #define Com_Memcpy memcpy
-#endif
 
 #define CIN_system	1
 #define CIN_loop	2

@@ -319,6 +319,8 @@ public:
 	xe_states_t state;
 	xe_matrix_t projection_matrix;
 	xe_matrix_t modelview_matrix;
+
+	XMMATRIX depth_fix;
 	
 	//	
 	int use_aa;

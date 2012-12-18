@@ -505,6 +505,8 @@ void R_SetupFrustum (viewParms_t *dest, float xmin, float xmax, float ymax, floa
 	}
 }
 
+
+/** http://www.oocities.org/vmelkon/zprecision.html **/
 /*
 ===============
 R_SetupProjection
@@ -568,9 +570,14 @@ Sets the z-component transformation part in the projection matrix
 */
 static __inline float SGN(float a)
 {
+	/*
     if (a > 0.0F) return (1.0F);
     if (a < 0.0F) return (-1.0F);
     return (0.0F);
+	*/
+	if ( a == 0.f)
+		return 0.f;
+	return __fsel(a, 1.0f, -1.0f);
 }
 #define DotProduct4(a,b)        ((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
 #define VectorScale4(a,b,c)     ((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
@@ -582,13 +589,21 @@ void R_SetupProjectionZ(viewParms_t *dest)
 	zNear = r_znear->value;
 	zFar	= dest->zFar;
 
+#if 0 // GL
 	depth	= zFar - zNear;
 
 	dest->projectionMatrix[2] = 0;
 	dest->projectionMatrix[6] = 0;
-	dest->projectionMatrix[10] = -( zFar + zNear ) / depth;
-	dest->projectionMatrix[14] = -2 * zFar * zNear / depth;
+	dest->projectionMatrix[10] = -( zFar + zNear ) / (zFar - zNear);
+	dest->projectionMatrix[14] = -2 * zFar * zNear / (zFar - zNear);
+#else // DX
+	depth	= zFar - zNear;
 
+	dest->projectionMatrix[2] = 0;
+	dest->projectionMatrix[6] = 0;
+	dest->projectionMatrix[10] = -( zFar + zNear ) / (zFar - zNear);
+	dest->projectionMatrix[14] = -2 * zFar * zNear / (zFar - zNear);
+#endif 
 	if (dest->isPortal)
 	{
 		float	plane[4];
@@ -619,6 +634,7 @@ void R_SetupProjectionZ(viewParms_t *dest)
 		dest->projectionMatrix[6]  = c[1];
 		dest->projectionMatrix[10] = c[2] + 1.0f;
 		dest->projectionMatrix[14] = c[3];
+
 	}
 }
 

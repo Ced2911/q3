@@ -40,6 +40,10 @@ void CGLImpl::SubmitVertexes()
 	CheckDirtyMatrix(&projection_matrix);
 	CheckDirtyMatrix(&modelview_matrix);
 
+	/*
+	GLImpl.device->SetVertexShaderConstantF(16, &GLImpl.state.viewport.MinZ, 1);
+	GLImpl.device->SetVertexShaderConstantF(17, &GLImpl.state.viewport.MaxZ, 1);
+	*/
 	ApplyTextures();
     shader.ApplyShader();
 	device->DrawPrimitiveUP(d3dprim[prim.primitive_type], primSize(d3dprim[prim.primitive_type], (vertices_count)), vertices_up, sizeof(glVerticesFormat_t));
