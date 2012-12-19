@@ -552,7 +552,7 @@ void CGLImpl::UpdateStates() {
 			scissor.bottom = state.scissor_h + state.scissor_y;
 			scissor.top = state.render_height - (state.scissor_h + state.scissor_y);
 #ifndef _DEBUG
-			device->SetScissorRect(&scissor);
+			//device->SetScissorRect(&scissor);
 #endif
 		}
 	}

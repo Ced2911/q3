@@ -581,7 +581,7 @@ int main( int no_argc, char **no_argv )
 
 		// quake 3
 		//"+set", "+map", "q3tourney4"
-		"+set", "+map", "q3dm0",
+		"+set", "+map", "q3dm1",
 		//"+set", "cg_thirdperson", "1",
 		// bfp3
 		//"+set", "fs_game", "bfpq3",

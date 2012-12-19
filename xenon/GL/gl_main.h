@@ -360,6 +360,8 @@ private:
 		int compressed;
 		int tiled;
 		int pPitch;
+		int base_width;
+		int base_height;
 	} _info;
 public:
 	GLTexture(int width, int height, D3DFORMAT format);
@@ -367,8 +369,8 @@ public:
 	void GetLevelDesc(int level, D3DSURFACE_DESC *pDesc);
 	void setTexture(int sampler);
 
-	void lockTexture();
-	void unlockTexture();
+	void lockTexture(int lvl);
+	void unlockTexture(int lvl);
 
 	BYTE * getData();
 	int getPitch();

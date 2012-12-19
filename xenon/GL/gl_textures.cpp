@@ -23,7 +23,8 @@ void CGLImpl::ApplyTextures()
 				
 				// set sampler states
 				device->SetSamplerAddressStates(i, tex->wrap_u, tex->wrap_v, D3DTADDRESS_WRAP);
-				device->SetSamplerFilterStates(i, tex->min_filter, tex->mag_filter, tex->mip_filter, tex->max_anisotropy);
+				// device->SetSamplerFilterStates(i, tex->min_filter, tex->mag_filter, tex->mip_filter, tex->max_anisotropy);
+				device->SetSamplerFilterStates(i, D3DTEXF_LINEAR, D3DTEXF_LINEAR, D3DTEXF_LINEAR, 4);
 			//}
 		}
 		else {
@@ -294,9 +295,11 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 	return;
 #endif
 
+#if 1 // no mipmap
 	if (level > 0)
 		return;
-		
+#endif
+
 	if (!GLImpl.tmus[GLImpl.current_tmu].boundtexture) {
 		printf("Not texture binded\n");
 		return;
@@ -316,7 +319,7 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 		BYTE * srcdata = (BYTE*) pixels;
 		BYTE * dstdata;
 
-		surf->lockTexture();
+		surf->lockTexture(level);
 
 		srcdata = (BYTE*) pixels;
 		surfbuf = (BYTE*)surf->getData();		
@@ -326,7 +329,7 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
 
 		copyImage(xoffset, yoffset, width, height, srcdata, srcbytes, surfbuf, dstbytes);
 
-		surf->unlockTexture();
+		surf->unlockTexture(level);
 
 		GLImpl.tmus[GLImpl.current_tmu].boundtexture->dirty = 1;
 	}
@@ -350,10 +353,10 @@ void glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei wid
 		printf("No texture bound\n");
 		return;
 	}
-	
+#if 1 // no mipmap
 	if (level > 0)
 		return;
-	
+#endif
 	GLImpl.device->SetTexture(0, NULL);
 
 	int srcbytes = src_format_to_bypp(pixelformat);
@@ -387,10 +390,16 @@ void glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei wid
 		return;
 	}
 	
-	if (GLImpl.tmus[GLImpl.current_tmu].boundtexture->teximg) {
+	
+
+	if (level > 0) {
+		need_texture = 0;
+	}
+
+	if (GLImpl.tmus[GLImpl.current_tmu].boundtexture->teximg && level == 0) {
 		D3DSURFACE_DESC desc;
 		surf = GLImpl.tmus[GLImpl.current_tmu].boundtexture->teximg;
-		surf->GetLevelDesc(0, &desc);
+		surf->GetLevelDesc(level, &desc);
 		if ((desc.Width != width) || (desc.Height != height) || (desc.Format != format)) {
 			need_texture = 1;
 			// destroy texture
@@ -404,10 +413,12 @@ void glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei wid
 	if (need_texture) {	
 		surf = new GLTexture(width, height, format);
 		GLImpl.tmus[GLImpl.current_tmu].boundtexture->teximg = surf;
+	} else {
+		surf = GLImpl.tmus[GLImpl.current_tmu].boundtexture->teximg;
 	}
 
 	// lock texture
-	surf->lockTexture();
+	surf->lockTexture(level);
 	
 	memset(surf->getData(), 0x00, surf->getPitch() * height);
 	GLImpl.tmus[GLImpl.current_tmu].boundtexture->internalformat = internalformat;
@@ -420,7 +431,7 @@ void glTexImage2D (GLenum target, GLint level, GLint internalformat, GLsizei wid
 
 	copyImage(0, 0, width, height, srcdata, srcbytes, surfbuf, dstbytes);
 
-	surf->unlockTexture();
+	surf->unlockTexture(level);
 
 	GLImpl.tmus[GLImpl.current_tmu].boundtexture->dirty = 1;
 }
@@ -497,33 +508,27 @@ static unsigned int glWrap(int param) {
 		case GL_MIRRORED_REPEAT:
 			return D3DTADDRESS_MIRROR;
 		case GL_REPEAT:
+			return D3DTADDRESS_WRAP;
 		default:
 			return D3DTADDRESS_WRAP;
 	}
 }
 
-static unsigned int getFilteringParam(unsigned int param) {
+static unsigned int getFilteringParam(int param) {
 	unsigned int ret = D3DTEXF_POINT;
 
-	if ((int) param == GL_LINEAR)
-	{
+	switch(param) {
+	case GL_LINEAR:
+	case GL_LINEAR_MIPMAP_NEAREST:
+	case GL_LINEAR_MIPMAP_LINEAR:
 		ret = D3DTEXF_LINEAR;
-	}
-	else if ((int) param == GL_LINEAR_MIPMAP_NEAREST)
-	{
-		ret = D3DTEXF_LINEAR;
-	}		
-	else if ((int) param == GL_LINEAR_MIPMAP_LINEAR)
-	{
-		ret = D3DTEXF_LINEAR;
-	}
-	else if ((int) param == GL_NEAREST_MIPMAP_NEAREST)
-	{
+		break;
+	case GL_NEAREST:
+	case GL_NEAREST_MIPMAP_NEAREST:
+	case GL_NEAREST_MIPMAP_LINEAR:
+	default:
 		ret = D3DTEXF_POINT;
-	}
-	else if ((int) param == GL_NEAREST_MIPMAP_LINEAR)
-	{
-		ret = D3DTEXF_POINT;
+		break;
 	}
 	return ret;
 }
@@ -538,14 +543,56 @@ void glTexParameterf (GLenum target, GLenum pname, GLfloat param)
 
 	switch (pname)
 	{
+#if 0
 	case GL_TEXTURE_MIN_FILTER:
 	case GL_TEXTURE_MAG_FILTER:
 		if(pname ==  GL_TEXTURE_MIN_FILTER) {
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = getFilteringParam((int) param);
 			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = getFilteringParam((int) param);
 		} else {
 			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mag_filter = getFilteringParam((int) param);
 		}
 		break;
+#else
+		if ((int) param == GL_NEAREST_MIPMAP_NEAREST)
+		{
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = D3DTEXF_POINT;
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mip_filter = D3DTEXF_POINT;
+		}
+		else if ((int) param == GL_LINEAR_MIPMAP_NEAREST)
+		{
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = D3DTEXF_LINEAR;
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mip_filter = D3DTEXF_POINT;
+		}
+		else if ((int) param == GL_NEAREST_MIPMAP_LINEAR)
+		{
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = D3DTEXF_POINT;
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mip_filter = D3DTEXF_LINEAR;
+		}
+		else if ((int) param == GL_LINEAR_MIPMAP_LINEAR)
+		{
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = D3DTEXF_LINEAR;
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mip_filter = D3DTEXF_LINEAR;
+		}
+		else if ((int) param == GL_LINEAR)
+		{
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = D3DTEXF_LINEAR;
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mip_filter = D3DTEXF_NONE;
+		}
+		else
+		{
+			// GL_NEAREST
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->min_filter = D3DTEXF_POINT;
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mip_filter = D3DTEXF_NONE;
+		}
+		break;
+
+	case GL_TEXTURE_MAG_FILTER:
+		if ((int) param == GL_LINEAR)
+			GLImpl.tmus[GLImpl.current_tmu].boundtexture->mag_filter = D3DTEXF_LINEAR;
+		else GLImpl.tmus[GLImpl.current_tmu].boundtexture->mag_filter = D3DTEXF_POINT;
+		break;
+#endif
 	case GL_TEXTURE_WRAP_S:
 		GLImpl.tmus[GLImpl.current_tmu].boundtexture->wrap_u = glWrap((int) param);
 		break;

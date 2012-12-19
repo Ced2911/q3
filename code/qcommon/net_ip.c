@@ -343,6 +343,69 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 
 //=============================================================================
 
+/*
+==================
+NET_GetPacket
+
+Receive one packet
+==================
+*/
+qboolean NET_GetPacket(netadr_t *net_from, msg_t *net_message, fd_set *fdr)
+{
+	int 	ret;
+	struct sockaddr from;
+	int		fromlen;
+	int		err;
+	
+	if(ip_socket != INVALID_SOCKET && FD_ISSET(ip_socket, fdr))
+	{
+		fromlen = sizeof(from);
+		ret = recvfrom( ip_socket, (void *)net_message->data, net_message->maxsize, 0, (struct sockaddr *) &from, &fromlen );
+		
+		if (ret == SOCKET_ERROR)
+		{
+			err =  WSAGetLastError();;
+
+			if( err != WSAEWOULDBLOCK && err != WSAECONNRESET )
+				Com_Printf( "NET_GetPacket: %s\n", NET_ErrorString() );
+		}
+		else
+		{
+
+			memset( ((struct sockaddr_in *)&from)->sin_zero, 0, 8 );
+		
+			if ( usingSocks && memcmp( &from, &socksRelayAddr, fromlen ) == 0 ) {
+				if ( ret < 10 || net_message->data[0] != 0 || net_message->data[1] != 0 || net_message->data[2] != 0 || net_message->data[3] != 1 ) {
+					return qfalse;
+				}
+				net_from->type = NA_IP;
+				net_from->ip[0] = net_message->data[4];
+				net_from->ip[1] = net_message->data[5];
+				net_from->ip[2] = net_message->data[6];
+				net_from->ip[3] = net_message->data[7];
+				net_from->port = *(short *)&net_message->data[8];
+				net_message->readcount = 10;
+			}
+			else {
+				SockadrToNetadr( (struct sockaddr *) &from, net_from );
+				net_message->readcount = 0;
+			}
+		
+			if( ret >= net_message->maxsize ) {
+				Com_Printf( "Oversize packet from %s\n", NET_AdrToString (*net_from) );
+				return qfalse;
+			}
+			
+			net_message->cursize = ret;
+			return qtrue;
+		}
+	}
+	
+	return qfalse;
+}
+
+//=============================================================================
+
 static char socksBuf[4096];
 
 /*
@@ -954,6 +1017,36 @@ void NET_Shutdown( void ) {
 	winsockInitialized = qfalse;
 }
 
+/*
+====================
+NET_Event
+
+Called from NET_Sleep which uses select() to determine which sockets have seen action.
+====================
+*/
+
+void NET_Event(fd_set *fdr)
+{
+	byte bufData[MAX_MSGLEN + 1];
+	netadr_t from;
+	msg_t netmsg;
+	
+	while(1)
+	{
+		MSG_Init(&netmsg, bufData, sizeof(bufData));
+
+		if(NET_GetPacket(&from, &netmsg, fdr))
+		{
+			if(com_sv_running->integer)
+				Com_RunAndTimeServerPacket(&from, &netmsg);
+			else
+				CL_PacketEvent(from, &netmsg);
+		}
+		else
+			break;
+	}
+}
+
 
 /*
 ====================
@@ -962,10 +1055,44 @@ NET_Sleep
 sleeps msec or until net socket is ready
 ====================
 */
-void NET_Sleep( int msec ) {
+void NET_Sleep(int msec)
+{
+	struct timeval timeout;
+	fd_set fdr;
+	int retval;
+	SOCKET highestfd = INVALID_SOCKET;
 
+	if(msec < 0)
+		msec = 0;
+
+	FD_ZERO(&fdr);
+
+	if(ip_socket != INVALID_SOCKET)
+	{
+		FD_SET(ip_socket, &fdr);
+
+		highestfd = ip_socket;
+	}
+
+#ifdef _WIN32
+	if(highestfd == INVALID_SOCKET)
+	{
+		// windows ain't happy when select is called without valid FDs
+		SleepEx(msec, 0);
+		return;
+	}
+#endif
+
+	timeout.tv_sec = msec/1000;
+	timeout.tv_usec = (msec%1000)*1000;
+
+	retval = select(highestfd + 1, &fdr, NULL, NULL, &timeout);
+
+	if(retval == SOCKET_ERROR)
+		Com_Printf("Warning: select() syscall failed: %s\n", NET_ErrorString());
+	else if(retval > 0)
+		NET_Event(&fdr);
 }
-
 
 /*
 ====================
