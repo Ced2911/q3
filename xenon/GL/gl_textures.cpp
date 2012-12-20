@@ -19,12 +19,11 @@ void CGLImpl::ApplyTextures()
 			//if (tmus[i].boundtexture->teximg->IsSet(device) == FALSE) {
 				glXeSurface_t * tex = tmus[i].boundtexture;
 
-				tex->teximg->setTexture(i);
-				
+				tex->teximg->setTexture(i);				
 				// set sampler states
 				device->SetSamplerAddressStates(i, tex->wrap_u, tex->wrap_v, D3DTADDRESS_WRAP);
 				// device->SetSamplerFilterStates(i, tex->min_filter, tex->mag_filter, tex->mip_filter, tex->max_anisotropy);
-				device->SetSamplerFilterStates(i, D3DTEXF_LINEAR, D3DTEXF_LINEAR, D3DTEXF_LINEAR, 4);
+				device->SetSamplerFilterStates(i, D3DTEXF_ANISOTROPIC, D3DTEXF_ANISOTROPIC, D3DTEXF_LINEAR, 16); // force anisotropic, no need for mipmap
 			//}
 		}
 		else {

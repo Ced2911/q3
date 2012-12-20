@@ -124,7 +124,11 @@ Sys_GetCurrentUser
 char *Sys_GetCurrentUser( void )
 {
 	static char s_userName[1024];
-	XUserGetName(0, s_userName, 1024);
+	if (XUserGetSigninState(0) != eXUserSigninState_NotSignedIn) {
+		XUserGetName(0, s_userName, 1024);
+	} else {
+		strcpy(s_userName, "None");
+	}
 	return s_userName;
 }
 
@@ -493,7 +497,7 @@ Display an error message
 */
 void Sys_ErrorDialog( const char *error )
 {
-	
+
 }
 
 /*
@@ -545,9 +549,8 @@ Windows specific initialisation
 */
 void Sys_PlatformInit( void )
 {
-	
-
 #ifdef _XBOX
+	// allow unsecure socket
 	INT err;
 	XNetStartupParams xnsp;
     memset(&xnsp, 0, sizeof(xnsp));
@@ -568,7 +571,10 @@ Windows specific initialisation
 */
 void Sys_PlatformExit( void )
 {
-
+#ifdef _DEBUG
+	DebugBreak();
+#endif
+	XLaunchNewImage(XLAUNCH_KEYWORD_DASH, 0);
 }
 
 /*

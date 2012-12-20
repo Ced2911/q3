@@ -277,8 +277,10 @@ void XDKGlEndFrame() {
 void XDKGlGetScreenSize(int * width, int * height) {
 	XVIDEO_MODE VideoMode;
 	XGetVideoMode( &VideoMode );
-	*width = VideoMode.dwDisplayWidth;
-	*height = VideoMode.dwDisplayHeight;
+	//*width = VideoMode.dwDisplayWidth;
+	//*height = VideoMode.dwDisplayHeight;
+	*width = 1280;
+	*height = 720;
 }
 
 void xe_gl_error(const char * format, ...)

@@ -581,7 +581,7 @@ int main( int no_argc, char **no_argv )
 
 		// quake 3
 		//"+set", "+map", "q3tourney4"
-		"+set", "+map", "q3dm1",
+		//"+set", "+map", "q3dm1",
 		//"+set", "cg_thirdperson", "1",
 		// bfp3
 		//"+set", "fs_game", "bfpq3",
@@ -589,7 +589,7 @@ int main( int no_argc, char **no_argv )
 		// ebfp
 		//"+set", "fs_game", "ebfp",
 		//"+set", "+map", "Goku-House"
-		// "+connect", "192.168.1.10:27960"
+		//"+connect", "192.168.1.10:27960"
 		//"+set", "dedicated", "1 "
 		// vm testing
 		/*

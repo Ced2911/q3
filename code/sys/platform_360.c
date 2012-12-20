@@ -454,18 +454,17 @@ Sound
 #include "../qcommon/q_shared.h"
 #include "../client/snd_local.h"
 
-qboolean snd_inited = qfalse;
-
-cvar_t *s_sdlBits;
-cvar_t *s_sdlSpeed;
-cvar_t *s_sdlChannels;
-cvar_t *s_sdlDevSamps;
-cvar_t *s_sdlMixSamps;
-
 /* The audio callback. All the magic happens here. */
 static int dmapos = 0;
 static int dmasize = 0;
 
+int Q3_XAudio2Init(void);
+int Q3_XAudioGetPos(void);
+int Q3_XAudioShutdown(void);
+int Q3_XAudioSubmit(void);
+int Q3_XAudioBegin(void);
+
+#if 0 // use sdl now
 
 /*
 ===============
@@ -474,37 +473,7 @@ SNDDMA_Init
 */
 qboolean SNDDMA_Init(void)
 {
-	char drivername[128];
-	int tmp;
-
-	if (snd_inited)
-		return qtrue;
-
-	if (!s_sdlBits) {
-		s_sdlBits = Cvar_Get("s_sdlBits", "16", CVAR_ARCHIVE);
-		s_sdlSpeed = Cvar_Get("s_sdlSpeed", "0", CVAR_ARCHIVE);
-		s_sdlChannels = Cvar_Get("s_sdlChannels", "2", CVAR_ARCHIVE);
-		s_sdlDevSamps = Cvar_Get("s_sdlDevSamps", "0", CVAR_ARCHIVE);
-		s_sdlMixSamps = Cvar_Get("s_sdlMixSamps", "0", CVAR_ARCHIVE);
-	}
-
-	Com_Printf( "SDL_Init( SDL_INIT_AUDIO )... " );	
-	Com_Printf( "OK\n" );
-
-	dmapos = 0;
-	dma.samplebits = 16;  // first byte of format is bits.
-	dma.channels = 2;
-	dma.samples = (2048 * 2) * 10;;
-	dma.submission_chunk = 1;
-	dma.speed = 48000;
-	dmasize = (dma.samples * (dma.samplebits/8));
-	dma.buffer = (byte*)calloc(1, dmasize);
-
-	Com_Printf("Starting SDL audio callback...\n");
-
-	Com_Printf("SDL audio initialized.\n");
-	snd_inited = qtrue;
-	return qtrue;
+	return (qboolean)Q3_XAudio2Init();
 }
 
 /*
@@ -514,7 +483,7 @@ SNDDMA_GetDMAPos
 */
 int SNDDMA_GetDMAPos(void)
 {
-	return dmapos;
+	return Q3_XAudioGetPos();
 }
 
 /*
@@ -524,12 +493,7 @@ SNDDMA_Shutdown
 */
 void SNDDMA_Shutdown(void)
 {
-	Com_Printf("Closing SDL audio device...\n");
-	free(dma.buffer);
-	dma.buffer = NULL;
-	dmapos = dmasize = 0;
-	snd_inited = qfalse;
-	Com_Printf("SDL audio device shut down.\n");
+	Q3_XAudioShutdown();
 }
 
 /*
@@ -541,6 +505,7 @@ Send sound to device if buffer isn't really the dma buffer
 */
 void SNDDMA_Submit(void)
 {
+	Q3_XAudioSubmit();
 }
 
 /*
@@ -550,5 +515,7 @@ SNDDMA_BeginPainting
 */
 void SNDDMA_BeginPainting (void)
 {
+	Q3_XAudioBegin();
 }
 
+#endif

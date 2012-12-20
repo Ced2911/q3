@@ -245,6 +245,8 @@
     <ImageXex>
       <BaseAddress>
       </BaseAddress>
+      <ConfigurationFile>q3.xml</ConfigurationFile>
+      <AdditionalOptions>/privilege:6 %(AdditionalOptions)</AdditionalOptions>
     </ImageXex>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
@@ -371,6 +373,10 @@
     <ClCompile Include="..\..\code\jpeg-8c\jquant1.c" />
     <ClCompile Include="..\..\code\jpeg-8c\jquant2.c" />
     <ClCompile Include="..\..\code\jpeg-8c\jutils.c" />
+    <ClCompile Include="..\..\code\lsdl\SDL_audio.c" />
+    <ClCompile Include="..\..\code\lsdl\SDL_audiodev.c" />
+    <ClCompile Include="..\..\code\lsdl\sdl_snd.c" />
+    <ClCompile Include="..\..\code\lsdl\SDL_xaudio2.c" />
     <ClCompile Include="..\..\code\qcommon\cmd.c" />
     <ClCompile Include="..\..\code\qcommon\cm_load.c" />
     <ClCompile Include="..\..\code\qcommon\cm_patch.c" />
@@ -436,6 +442,10 @@
     <ClCompile Include="..\..\code\sys\platform_360.c" />
     <ClCompile Include="..\..\code\sys\sys_360.c" />
     <ClCompile Include="..\..\code\sys\sys_main.c" />
+    <ClCompile Include="..\..\code\sys\xaudio2_sound.cpp">
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Xbox 360'">CompileAsCpp</CompileAs>
+      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Xbox 360'">CompileAsCpp</CompileAs>
+    </ClCompile>
     <ClCompile Include="..\..\code\zlib\adler32.c" />
     <ClCompile Include="..\..\code\zlib\crc32.c" />
     <ClCompile Include="..\..\code\zlib\inffast.c" />
@@ -480,6 +490,13 @@
     <ClInclude Include="..\..\code\jpeg-6b\jpegint.h" />
     <ClInclude Include="..\..\code\jpeg-6b\jpeglib.h" />
     <ClInclude Include="..\..\code\jpeg-6b\jversion.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL_audiodev_c.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL_audiomem.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL_audio_c.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL_config.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL_sysaudio.h" />
+    <ClInclude Include="..\..\code\lsdl\SDL_types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

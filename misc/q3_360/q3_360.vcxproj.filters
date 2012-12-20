@@ -31,6 +31,9 @@
     <Filter Include="renderer\Source Files">
       <UniqueIdentifier>{5f9b0318-6ef7-4ef3-bda8-6aa72bbae369}</UniqueIdentifier>
     </Filter>
+    <Filter Include="sdl_audio">
+      <UniqueIdentifier>{6b31f34d-a69f-4479-89d2-305e2a53001d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\code\botlib\be_aas_bspq3.c">
@@ -537,6 +540,21 @@
     <ClCompile Include="..\..\code\renderer\tr_world.c">
       <Filter>renderer\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\code\sys\xaudio2_sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\lsdl\SDL_audio.c">
+      <Filter>sdl_audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\lsdl\SDL_audiodev.c">
+      <Filter>sdl_audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\lsdl\SDL_xaudio2.c">
+      <Filter>sdl_audio</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\code\lsdl\sdl_snd.c">
+      <Filter>sdl_audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\code\botlib\aasfile.h">
@@ -646,6 +664,27 @@
     </ClInclude>
     <ClInclude Include="..\..\code\jpeg-6b\jversion.h">
       <Filter>jpeg\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL_audio_c.h">
+      <Filter>sdl_audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL_audiodev_c.h">
+      <Filter>sdl_audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL_audiomem.h">
+      <Filter>sdl_audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL_sysaudio.h">
+      <Filter>sdl_audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL.h">
+      <Filter>sdl_audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL_types.h">
+      <Filter>sdl_audio</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\code\lsdl\SDL_config.h">
+      <Filter>sdl_audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

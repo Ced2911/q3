@@ -28,7 +28,7 @@ GLTexture::GLTexture(int width, int height, D3DFORMAT format) {
 #else
 	D3DXCreateTexture(GLImpl.device, width, height, 1, 0, format, 0, &tex); // no mip map
 #endif
-	printf("tex lvl count: %d\n", tex->GetLevelCount());
+	//printf("tex lvl count: %d\n", tex->GetLevelCount());
 }
 GLTexture::~GLTexture()
 {

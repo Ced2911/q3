@@ -424,6 +424,10 @@ void Sys_SendPacket( int length, const void *data, netadr_t to ) {
 	else if( to.type == NA_IP ) {
 		net_socket = ip_socket;
 	}
+	// ignore ipv6 packet
+	else if (to.type == NA_MULTICAST6 || to.type == NA_IP6){
+		return;
+	}
 	else {
 		Com_Error( ERR_FATAL, "Sys_SendPacket: bad address type" );
 		return;
