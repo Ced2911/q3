@@ -319,6 +319,42 @@ static void circular_deadzone(short *x, short *y, int deadzone) {
 	*y = LY;
 }
 
+#define XKEYSIZE	512
+enum keyboard_st {
+	keyboard_hide = 0,
+	keyboard_show = 1,
+	keyboard_succes = 2
+};
+static volatile int keyboard_states = keyboard_hide;
+static XOVERLAPPED keyboard_event;
+static char q3keyboard[512];
+
+static void keyboard_thread() {
+	WCHAR xkeyboard[XKEYSIZE];
+	memset(xkeyboard, 0, XKEYSIZE * sizeof(WCHAR));
+	while(1) {
+		if (keyboard_states == keyboard_show) {
+			XShowKeyboardUI(0, VKBD_DEFAULT, NULL, NULL, 
+				  L"Quake3",  
+				  xkeyboard, XKEYSIZE, &keyboard_event);
+
+			// wait for keyboard end
+			while(!XHasOverlappedIoCompleted(&keyboard_event)) {
+				Sleep(100);
+			}
+			// keyboard closed
+			if (keyboard_event.dwExtendedError != ERROR_CANCELLED) {
+				wcstombs(q3keyboard, xkeyboard, 512);
+				keyboard_states = keyboard_succes;
+			} else {
+				keyboard_states = keyboard_hide;
+			}
+		}
+
+		Sleep(250);
+	}
+}
+
 static void xinput_update() {
 	XINPUT_STATE state;
 	int i = 0;
@@ -339,6 +375,23 @@ static void xinput_update() {
 		else if (oldButtons  & v && !(buttons  & v)){
 			Com_QueueEvent( 0, SE_KEY, joyDirectionKeys[i], qfalse, 0, NULL );
 		}
+	}
+
+	if (( Key_GetCatcher() & KEYCATCH_UI ) || (Key_GetCatcher() & KEYCATCH_CGAME)) {
+		if (keyboard_states == keyboard_hide) {
+			if (!(oldButtons & XINPUT_GAMEPAD_Y) && (buttons & XINPUT_GAMEPAD_Y)) {
+				keyboard_states = keyboard_show;
+			}
+		}
+	}
+	if (keyboard_states == keyboard_succes) {
+		for( i = 0; i < XKEYSIZE; i++) {
+			if (q3keyboard[i] == 0) {
+				break;
+			}
+			Com_QueueEvent( 0, SE_CHAR, q3keyboard[i], 0, 0, NULL );
+		}
+		keyboard_states = keyboard_hide;
 	}
 
 	// trigger
@@ -400,6 +453,8 @@ static void xinput_update() {
 
 void IN_Init( void )
 {
+	HANDLE XkeyboardHandle;
+
 	Key_SetBinding(K_JOY1 + 0, "+scores");		// XINPUT_GAMEPAD_DPAD_UP
 	Key_SetBinding(K_JOY1 + 1, "+attack");	
 	Key_SetBinding(K_JOY1 + 2, "weapprev");
@@ -427,6 +482,11 @@ void IN_Init( void )
 
 	Key_SetBinding(K_JOY20, "+zoom");
 	Key_SetBinding(K_JOY21, "+attack");
+
+	// create fake keyboard thread
+	XkeyboardHandle = CreateThread(NULL,0, (LPTHREAD_START_ROUTINE)keyboard_thread, NULL, CREATE_SUSPENDED, NULL);
+	XSetThreadProcessor(XkeyboardHandle, 3);
+	ResumeThread(XkeyboardHandle);
 
 	oldButtons = buttons = 0;
 }
