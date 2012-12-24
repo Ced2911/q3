@@ -247,6 +247,8 @@
       </BaseAddress>
       <ConfigurationFile>q3.xml</ConfigurationFile>
       <AdditionalOptions>/privilege:6 %(AdditionalOptions)</AdditionalOptions>
+      <TitleID>
+      </TitleID>
     </ImageXex>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_LTCG|Xbox 360'">
